@@ -72,7 +72,9 @@ class SocketService {
   // Send message
   void sendMessage({
     required String receiverId,
-    required String text,
+    String? text,
+    String? messageType,
+    String? mediaUrl,
     required Function(Map<String, dynamic> msg) onConfirmation,
   }) {
     if (_socket == null || !_socket!.connected) {
@@ -82,7 +84,9 @@ class SocketService {
 
     _socket!.emitWithAck('send_message', {
       'receiverId': receiverId,
-      'text': text,
+      'text': text ?? '',
+      'messageType': messageType ?? 'text',
+      'mediaUrl': mediaUrl ?? '',
     }, ack: (data) {
       if (data != null && data['success'] == true) {
         onConfirmation(Map<String, dynamic>.from(data['message']));

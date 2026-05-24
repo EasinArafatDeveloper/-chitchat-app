@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
 
@@ -212,5 +214,81 @@ class ChatProvider extends ChangeNotifier {
     _typingStatuses.clear();
     _activeChatUserId = null;
     notifyListeners();
+  }
+
+  // Send Image Message
+  Future<bool> sendImageMessage(String receiverId, File imageFile) async {
+    if (_token == null) return false;
+    
+    try {
+      final responseStream = await ApiService.uploadMediaFile(
+        file: imageFile,
+        token: _token!,
+      );
+      final response = await http.Response.fromStream(responseStream);
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String mediaUrl = data['mediaUrl'] ?? '';
+        
+        if (mediaUrl.isNotEmpty) {
+          _socketService.sendMessage(
+            receiverId: receiverId,
+            messageType: 'image',
+            mediaUrl: mediaUrl,
+            onConfirmation: (savedMessage) {
+              if (!_messages.containsKey(receiverId)) {
+                _messages[receiverId] = [];
+              }
+              _messages[receiverId]!.add(savedMessage);
+              _updateConversationListWithMessage(savedMessage);
+              notifyListeners();
+            },
+          );
+          return true;
+        }
+      }
+    } catch (e) {
+      print('Error sending image message: $e');
+    }
+    return false;
+  }
+
+  // Send Audio Message
+  Future<bool> sendAudioMessage(String receiverId, File audioFile) async {
+    if (_token == null) return false;
+    
+    try {
+      final responseStream = await ApiService.uploadMediaFile(
+        file: audioFile,
+        token: _token!,
+      );
+      final response = await http.Response.fromStream(responseStream);
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String mediaUrl = data['mediaUrl'] ?? '';
+        
+        if (mediaUrl.isNotEmpty) {
+          _socketService.sendMessage(
+            receiverId: receiverId,
+            messageType: 'audio',
+            mediaUrl: mediaUrl,
+            onConfirmation: (savedMessage) {
+              if (!_messages.containsKey(receiverId)) {
+                _messages[receiverId] = [];
+              }
+              _messages[receiverId]!.add(savedMessage);
+              _updateConversationListWithMessage(savedMessage);
+              notifyListeners();
+            },
+          );
+          return true;
+        }
+      }
+    } catch (e) {
+      print('Error sending audio message: $e');
+    }
+    return false;
   }
 }

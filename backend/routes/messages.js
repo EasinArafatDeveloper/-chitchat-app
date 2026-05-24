@@ -3,6 +3,9 @@ const router = express.Router();
 const Message = require('../models/Message');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // @route   GET api/messages/:userId
 // @desc    Get chat history between current user and another user
@@ -96,6 +99,54 @@ router.get('/conversations/list', auth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error retrieving conversations list' });
+  }
+});
+
+// Multer storage configuration for message media
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = './uploads';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'msg-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
+  fileFilter: function (req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowedExtensions = ['.jpeg', '.jpg', '.png', '.gif', '.mp3', '.wav', '.m4a', '.aac', '.ogg', '.caf', '.3gp', '.flac'];
+    if (allowedExtensions.includes(ext)) {
+      return cb(null, true);
+    }
+    cb(new Error('Invalid file format. Only images and audio files are allowed!'));
+  }
+});
+
+// @route   POST api/messages/upload-media
+// @desc    Upload message attachment (image / audio)
+// @access  Private
+router.post('/upload-media', [auth, upload.single('media')], async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'Please upload a media file' });
+  }
+
+  try {
+    const relativeUrl = `/uploads/${req.file.filename}`;
+    res.json({
+      mediaUrl: relativeUrl,
+      message: 'Media uploaded successfully'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error uploading media' });
   }
 });
 

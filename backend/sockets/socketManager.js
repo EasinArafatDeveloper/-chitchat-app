@@ -43,10 +43,10 @@ module.exports = function (io) {
 
     // 3. Listen for real-time messages
     socket.on('send_message', async (data, callback) => {
-      const { receiverId, text } = data;
+      const { receiverId, text, messageType, mediaUrl } = data;
 
-      if (!receiverId || !text) {
-        if (callback) callback({ success: false, error: 'Receiver ID and text are required' });
+      if (!receiverId || (!text && !mediaUrl)) {
+        if (callback) callback({ success: false, error: 'Receiver ID and text or mediaUrl are required' });
         return;
       }
 
@@ -58,7 +58,9 @@ module.exports = function (io) {
         const newMessage = new Message({
           sender: userId,
           receiver: receiverId,
-          text: text,
+          text: text || '',
+          messageType: messageType || 'text',
+          mediaUrl: mediaUrl || '',
           status: status
         });
         await newMessage.save();

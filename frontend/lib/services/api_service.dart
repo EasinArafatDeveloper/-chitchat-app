@@ -85,6 +85,47 @@ class ApiService {
     return await request.send();
   }
 
+  // Upload Message Media (Image/Audio)
+  static Future<http.StreamedResponse> uploadMediaFile({
+    required File file,
+    required String token,
+  }) async {
+    final url = Uri.parse('$_baseUrl/api/messages/upload-media');
+    final request = http.MultipartRequest('POST', url);
+    
+    // Set headers
+    request.headers['Authorization'] = 'Bearer $token';
+    
+    // Determine content-type based on extension
+    String mimeType = 'application/octet-stream';
+    final pathStr = file.path.toLowerCase();
+    if (pathStr.endsWith('.png')) {
+      mimeType = 'image/png';
+    } else if (pathStr.endsWith('.jpg') || pathStr.endsWith('.jpeg')) {
+      mimeType = 'image/jpeg';
+    } else if (pathStr.endsWith('.gif')) {
+      mimeType = 'image/gif';
+    } else if (pathStr.endsWith('.mp3')) {
+      mimeType = 'audio/mpeg';
+    } else if (pathStr.endsWith('.m4a')) {
+      mimeType = 'audio/mp4';
+    } else if (pathStr.endsWith('.wav')) {
+      mimeType = 'audio/wav';
+    } else if (pathStr.endsWith('.ogg')) {
+      mimeType = 'audio/ogg';
+    }
+    
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'media',
+        file.path,
+        contentType: MediaType.parse(mimeType),
+      ),
+    );
+
+    return await request.send();
+  }
+
   // Get conversation list
   static Future<http.Response> getConversations(String token) async {
     final url = Uri.parse('$_baseUrl/api/messages/conversations/list');
