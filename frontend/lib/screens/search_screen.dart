@@ -40,8 +40,13 @@ class _SearchScreenState extends State<SearchScreen> {
       );
 
       if (response.statusCode == 200 && mounted) {
+        final List<dynamic> users = jsonDecode(response.body);
+        // Exclude current user from search results
+        final currentUserId = authProvider.user?['_id']?.toString() ?? authProvider.user?['id']?.toString() ?? '';
+        final filteredList = users.where((u) => u['_id']?.toString() != currentUserId).toList();
+
         setState(() {
-          _searchResults = jsonDecode(response.body);
+          _searchResults = filteredList;
           _isLoading = false;
         });
       } else if (mounted) {
@@ -63,11 +68,11 @@ class _SearchScreenState extends State<SearchScreen> {
     if (path == null || path.isEmpty) {
       return CircleAvatar(
         radius: 22,
-        backgroundColor: const Color(0xFF6C63FF).withOpacity(0.2),
+        backgroundColor: const Color(0xFF00A86B).withOpacity(0.1),
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: const TextStyle(
-            color: Color(0xFF8B80F9),
+            color: Color(0xFF00A86B),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -85,17 +90,17 @@ class _SearchScreenState extends State<SearchScreen> {
         fit: BoxFit.cover,
         placeholder: (context, url) => CircleAvatar(
           radius: 22,
-          backgroundColor: Colors.grey[900],
+          backgroundColor: Colors.grey[100],
           child: const SizedBox(
             height: 14,
             width: 14,
-            child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6C63FF)),
+            child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF00A86B)),
           ),
         ),
         errorWidget: (context, url, error) => CircleAvatar(
           radius: 22,
-          backgroundColor: Colors.grey[800],
-          child: Text(name[0].toUpperCase(), style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.grey[200],
+          child: Text(name[0].toUpperCase(), style: const TextStyle(color: Color(0xFF1E293B))),
         ),
       ),
     );
@@ -104,17 +109,21 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0C20),
+      backgroundColor: const Color(0xFFF4FAF8),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF15102A),
+        backgroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Color(0xFF1E293B)),
           decoration: const InputDecoration(
             hintText: 'Search by name or email...',
-            hintStyle: TextStyle(color: Colors.white38),
+            hintStyle: TextStyle(color: Color(0xFF64748B)),
             border: InputBorder.none,
           ),
           onChanged: _performSearch,
@@ -122,7 +131,7 @@ class _SearchScreenState extends State<SearchScreen> {
         actions: [
           if (_searchController.text.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear, color: Colors.white),
+              icon: const Icon(Icons.clear, color: Color(0xFF1E293B)),
               onPressed: () {
                 _searchController.clear();
                 setState(() {
@@ -134,20 +143,20 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
+              child: CircularProgressIndicator(color: Color(0xFF00A86B)),
             )
           : _searchResults.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.search_off_rounded, size: 80, color: Colors.white.withOpacity(0.1)),
+                      Icon(Icons.search_off_rounded, size: 80, color: const Color(0xFF00A86B).withOpacity(0.2)),
                       const SizedBox(height: 16),
                       Text(
                         _searchController.text.isEmpty
                             ? 'Search for users to start chatting'
                             : 'No users found matching query',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 15),
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 15),
                       ),
                     ],
                   ),
@@ -162,12 +171,13 @@ class _SearchScreenState extends State<SearchScreen> {
                     final userEmail = user['email'] ?? '';
                     final isOnline = user['isOnline'] as bool? ?? false;
 
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.01),
+                    return Card(
+                      color: Colors.white,
+                      elevation: 0,
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.02)),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
                       ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -182,9 +192,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                   width: 12,
                                   height: 12,
                                   decoration: BoxDecoration(
-                                    color: Colors.greenAccent[400],
+                                    color: const Color(0xFF00A86B),
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: const Color(0xFF0F0C20), width: 1.5),
+                                    border: Border.all(color: Colors.white, width: 1.5),
                                   ),
                                 ),
                               ),
@@ -192,15 +202,14 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         title: Text(
                           userName,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
                           userEmail,
-                          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13),
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF6C63FF)),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF00A86B)),
                         onTap: () {
-                          // Close search screen and open chat screen
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
                               builder: (_) => ChatScreen(
